@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+    </head>
+    <style>
+        body {
+            margin: 0px;
+            overflow: hidden;
+        }
+
+    </style>
+    <script src=" https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.min.js"
+        integrity="sha512-WIklPM6qPCIp6d3fSSr90j+1unQHUOoWDS4sdTiR8gxUTnyZ8S2Mr8e10sKKJ/bhJgpAa/qG068RDkg6fIlNFA=="
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/addons/p5.sound.js"
+        integrity="sha512-KxzVm+IqxNNq0+SzT/zzd5PHxY4LPrN+v5gZJ6+JKqjeU3Cr4y/djAg5eNlKDWurn1SeKZpql/yeOMWblMSzOg=="
+        crossorigin="anonymous"></script>
+    <script>
+        class Rocket {
+            constructor(x, y, explode_count) {
+                this.explode_count = explode_count;
+                this.colour = random(255);
+                this.rocket = new Particle(x, y, this.colour, true);
+                this.exploded = false;
+                this.particles = [];
+            }
+
+            done() {
+                return this.exploded && this.particles.length === 0;
+            }
+
+            update() {
+                if (!this.exploded) {
+                    this.rocket.applyForce(gravity);
+                    this.rocket.update();
+                    if (this.rocket.vel.y >= 0) {
+                        this.explode();
+                        this.exploded = true;
+                    }
+                }
+
+                for (var i = this.particles.length - 1; i >= 0; i--) {
+                    let randomX = random([-0.3, 0.3]);
+                    let y = 0.1;
+                    let gravity = createVector(randomX, y);
+                    this.particles[i].applyForce(gravity);
+                    this.particles[i].update();
+                    if (this.particles[i].done()) {
+                        this.particles.splice(i, 1);
+                    }
+                }
+            }
+
+            show() {
+                if (!this.exploded) {
+                    this.rocket.show();
+                }
+                if (this.exploded) {
+                    for (var i = 0; i < this.particles.length; i++) {
+                        this.particles[i].show();
+                    }
+                }
+            }
+
+            explode() {
+                for (var i = 0; i < 100; i++) {
+                    var p = new Particle(this.rocket.pos.x, this.rocket.pos.y, this.colour, false);
+                    this.particles.push(p);
+                }
+
+                setTimeout(explode_sound, 500);
+            }
+        }
+
+        class Particle {
+            constructor(x, y, colour, is_base) {
+                this.lifespan = 255;
+                this.decay = 7;
+                this.colour = colour;
+                this.pos = createVector(x, y);
+                this.is_base = is_base;
+                if (this.is_base) {
+                    this.vel = createVector(0, random(-10, -0));
+                } else {
+                    this.vel = p5.Vector.random2D();
+                    this.vel.mult(random(-20, 50));
+                }
+                this.acc = createVector(0, 2);
+            }
+
+            applyForce(force) {
+                this.acc.add(force);
+            }
+
+            done() {
+                return this.lifespan < 0;
+            }
+
+            update() {
+                if (!this.is_base) {
+                    this.vel.mult(0.90);
+                    this.lifespan -= 5;
+                    this.decay -= 0.1;
+                }
+                this.vel.add(this.acc);
+                // this.vel.y = 0.2;
+                this.pos.add(this.vel);
+                this.acc.mult(0);
+            }
+
+            show() {
+                colorMode(HSB);
+                if (!this.is_base) {
+                    strokeWeight(this.decay);
+                    stroke(this.colour, 255, 255, this.lifespan);
+                } else {
+                    stroke(this.colour, 255, 255);
+                }
+
+                point(this.pos.x, this.pos.y)
+            }
+        }
+
+        var fireworks = [];
+        var gravity;
+        let sound_fx;
+
+        function setup() {
+            sounds = [loadSound('./fx.mp3'), loadSound("./fx2.mp3"), loadSound("./fx3.mp3"), loadSound("./fx4.mp3")];
+            whistle_sound = loadSound("./whistle.mp3");
+            createCanvas(screen.width, screen.height);
+            colorMode(HSB);
+            gravity = createVector(0, 0.1);
+            stroke(255);
+            strokeWeight(3);
+            fireworks.push(new Rocket(random(width), random(height)));
+        }
+
+        function mouseClicked() {
+            fireworks.push(new Rocket(mouseX, mouseY));
+            setTimeout(() => {
+                whistle_sound.play();
+            }, 100);
+        }
+
+        function explode_sound() {
+            let sound = random(sounds);
+            if (sound.isPlaying()) {
+            } else {
+                sound.play();
+            }
+        }
+
+        function draw() {
+            colorMode(RGB);
+            background(0, 0, 0, 20);
+
+            if (random(1) < 0.05) {
+                fireworks.push(new Rocket(random(width), random(height)));
+            }
+
+            for (var i = fireworks.length - 1; i >= 0; i--) {
+                fireworks[i].update();
+                fireworks[i].show();
+                if (fireworks[i].done()) {
+                    fireworks.splice(i, 1);
+                }
+            }
+        }
+
+    </script>
+
+    <body>
+    </body>
+
+</html>
